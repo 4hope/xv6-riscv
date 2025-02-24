@@ -3,22 +3,16 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 
-int all_digits_and_space_and_sign(char* str) {
-    char digits_and_space[12] = "-0123456789 ";
+int all_digits_and_space_and_sign(const char* str) {
     for (int i = 0; i < strlen(str); ++i) {
-        for (int j = 0; j < strlen(digits_and_space); ++j) {
-            if (str[i] == digits_and_space[j]) {
-                break;
-            }
-            if (j == strlen(digits_and_space) - 1) {
-                return 0;
-            }
+        if (!(('0' <= str[i] && str[i] <= '9') || str[i] == '-' || str[i] == ' ')) {
+            return 0;
         }
     }
     return 1;
 }
 
-int number_space_number(char* str) {
+int number_space_number(const char* str) {
     int count_spaces = 0, space_pos = 0, count_minus = 0;
     for (int i = 0; i < strlen(str); ++i)
     {
@@ -29,19 +23,24 @@ int number_space_number(char* str) {
         else if (str[i] == '-') {
             count_minus++;
         }
+
+        if (count_spaces > 1) return 0;
+        if (count_minus > 2)return 0;
     }
 
-    if (count_spaces != 1 || str[0] == ' ' || str[strlen(str) - 1] == ' ') {
+    if (str[0] == ' ' || str[strlen(str) - 1] == ' ') {
         return 0;
     }
-
-    if (count_minus > 2) return 0;
 
     if (count_minus == 2 && str[0] == '-' && str[space_pos + 1] == '-') return 1;
     if (count_minus == 1 && (str[0] == '-' || str[space_pos + 1] == '-')) return 1;
     if (count_minus == 0) return 1;
 
     return 0;
+}
+
+void print_error(const char *str) {
+    write(2, str, strlen(str));
 }
 
 int main() {
@@ -54,11 +53,11 @@ int main() {
             break;
         }
         if (i == 128) {
-            printf("Ошибка: буфер переполнен!\n");
+            print_error("Ошибка: буфер переполнен!\n");
             exit(1);
         }
         if (count < 0) {
-            printf("Ошибка: не удалось считать строку!\n");
+            print_error("Ошибка: не удалось считать строку!\n");
             exit(1);
         }
         buffer[i] = c;
@@ -70,11 +69,11 @@ int main() {
     printf("|%s|\n", buffer);
 
     if (!all_digits_and_space_and_sign(buffer)) {
-        printf("Ошибка: строка состоит не из цифр, пробелов и минусов!\n");
+        print_error("Ошибка: строка состоит не из цифр, пробелов и минусов!\n");
         exit(1);
     }
     if (!number_space_number(buffer)) {
-        printf("Ошибка: строка не имеет вид |число число|\n");
+        print_error("Ошибка: строка не имеет вид |число число|\n");
         exit(1);
     }
 

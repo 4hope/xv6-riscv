@@ -162,16 +162,22 @@ find_space2:
     j find_space2
 
 ret2:
-    la a0, error_many_spaces
-    call printf
-    
+    li a0, 2
+    la a1, error_many_spaces
+    li a2, 74
+    li a7, 16
+    ecall
+
     li a0, 1
     call exit
 
 ret3:
-    la a0, error_buffer_overflow
-    call printf
-    
+    li a0, 2
+    la a1, error_buffer_overflow
+    li a2, 47
+    li a7, 16
+    ecall
+
     li a0, 1
     call exit
 
