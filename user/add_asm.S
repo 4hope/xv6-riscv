@@ -180,4 +180,4 @@ ret3:
 fmt_input: .string "|%s|\n"
 fmt_sum: .string "%d\n"
 error_many_spaces: .string "Ошибка: строка не имеет вид |число число|\n"
-error_buffer_overflow: .string "Ошибка: переполнение буфера\n"
+error_buffer_overflow: .string "Ошибка: буфер переполнен!\n"
