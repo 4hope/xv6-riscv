@@ -25,8 +25,10 @@ int number_space_number(const char* str) {
         }
 
         if (count_spaces > 1) return 0;
-        if (count_minus > 2)return 0;
+        if (count_minus > 2) return 0;
     }
+
+    if (count_spaces == 0) return 0;
 
     if (str[0] == ' ' || str[strlen(str) - 1] == ' ') {
         return 0;
@@ -52,7 +54,7 @@ int main() {
         if (c == '\n') {
             break;
         }
-        if (i == 128) {
+        if (i == 23) {
             print_error("Ошибка: буфер переполнен!\n");
             exit(1);
         }
