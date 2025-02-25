@@ -34,8 +34,12 @@ int number_space_number(const char* str) {
         return 0;
     }
 
-    if (count_minus == 2 && str[0] == '-' && str[space_pos + 1] == '-') return 1;
-    if (count_minus == 1 && (str[0] == '-' || str[space_pos + 1] == '-')) return 1;
+    if (count_minus == 2 && (str[0] == '-' && str[1] != ' ') &&
+        (str[space_pos + 1] == '-' && space_pos + 2 < strlen(str) && str[space_pos + 2] != ' ')) // здесь дополнительно проверяем, что за минусами идем цифра
+        return 1;
+    if (count_minus == 1 && ((str[0] == '-' && str[1] != ' ') || 
+        (str[space_pos + 1] == '-' && space_pos + 2 < strlen(str) && str[space_pos + 2] != ' ')))
+        return 1;
     if (count_minus == 0) return 1;
 
     return 0;
