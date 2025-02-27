@@ -1,10 +1,9 @@
-#include "syscall.h"
-
 .global main
 
 main:
     addi sp, sp, -24
     mv a0, sp
+    li a1, 24
 
     call gets
 
