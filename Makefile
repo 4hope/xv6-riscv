@@ -141,6 +141,8 @@ UPROGS=\
 	$U/_zombie\
 	$U/_add\
 	$U/_add_asm\
+	$U/_proc_manager\
+	$U/_pipe_wc_xv6\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
