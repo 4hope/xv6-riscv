@@ -3,6 +3,8 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 
+#define BUFSIZE 128
+
 void perror(const char *str) {
     write(2, str, strlen(str));
     exit(1);
@@ -60,10 +62,10 @@ int main(int argc, char **argv) {
         }
 
         int len_buf = 0;
-        char buffer[128];
+        char buffer[BUFSIZE];
         for (int i = 0; i < argc; i++) {
             int arg_len = strlen(argv[i]);
-            if (len_buf + arg_len + 1 <= (int)sizeof(buffer) - 1) {
+            if (len_buf + arg_len + 1 <= BUFSIZE) {
                 memcpy(buffer + len_buf, argv[i], arg_len);
                 len_buf += arg_len;
                 buffer[len_buf] = '\n';
@@ -71,7 +73,6 @@ int main(int argc, char **argv) {
             }
             else {
                 my_write(buffer, pipefd, len_buf);
-                memset(buffer, 0, sizeof(buffer));
                 len_buf = 0;
             }
         }
