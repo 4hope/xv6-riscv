@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "procinfo.h"
 
 struct cpu cpus[NCPU];
 
@@ -692,4 +693,69 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+int ps_listinfo(struct procinfo *plist, int lim)
+{
+  struct proc *procs[NPROC];
+  struct proc *p;
+
+  int count = 0;
+  for (p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if (p->state != UNUSED) {
+      procs[count] = p;
+      ++count;
+    }
+    release(&p->lock);
+  }
+
+  if (plist == 0) {
+    return count;
+  }
+
+  if (count > lim) {
+    return -1;
+  }
+
+  struct procinfo current_proc;
+  struct proc *mp = myproc();
+
+  int write_process = 0;
+  for (int i = 0; i < count; ++i) {
+    p = procs[i];
+    acquire(&p->lock);
+    if (p->state == UNUSED) {
+      release(&p->lock);
+      continue;
+    }
+
+    current_proc.pid = p->pid;
+    
+    struct proc* parent = p->parent;
+    if (parent == 0) {
+      current_proc.ppid = -1;
+      
+    }
+    else {
+      acquire(&parent->lock);
+      current_proc.ppid = parent->pid;
+      strncpy(current_proc.pname, parent->name, sizeof(parent->name));
+      release(&parent->lock);
+    }
+
+    strncpy(current_proc.name, p->name, sizeof(p->name));
+
+    current_proc.state = p->state;
+
+    release(&p->lock);
+
+    if (copyout(mp->pagetable, (uint64)(plist + write_process), (char *)&current_proc, sizeof(current_proc)) < 0) {
+      return -2;
+    }
+
+    write_process++;
+  }
+
+  return write_process;
 }
