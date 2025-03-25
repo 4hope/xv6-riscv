@@ -507,14 +507,14 @@ sys_pipe(void)
 uint64
 sys_mutex(void)
 {
-  struct file *f = mutexalloc();
-  if (f == 0)
+  struct file *f;
+  if (mutexalloc(&f) < 0)
     return -1;
 
   int fd = fdalloc(f);
   if (fd == -1)
   {
-    fclose(f);
+    fileclose(f);
     return -1;
   }
 
@@ -535,6 +535,8 @@ sys_mutex_lock(void)
     return -1;
 
   acquiresleep(f->mutex);
+
+  return fd;
 }
 
 uint64
@@ -551,4 +553,6 @@ sys_mutex_unlock(void)
     return -1;
 
   releasesleep(f->mutex);
+
+  return fd;
 }
