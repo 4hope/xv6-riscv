@@ -57,6 +57,7 @@ void print_ps_listinfo() {
         }
 
         free(ptable);
+        break;
     }
 }
 
