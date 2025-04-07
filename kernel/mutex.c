@@ -29,9 +29,10 @@ int mutexalloc(struct file **f)
     }
     initsleeplock(m, "mutex");
     (*f)->type = FD_MUTEX;
-    (*f)->readable = 1;
+    (*f)->readable = 0;
     (*f)->writable = 0;
     (*f)->mutex = m;
+    printf("Mutex alloced\n");
     return 0;
 }
 
@@ -42,4 +43,5 @@ void mutexclose(struct file *f)
         kfree(m);
     }
     f->type = FD_NONE;
+    printf("Mutex closed\n");
 }
