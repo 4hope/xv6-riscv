@@ -22,6 +22,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int print_pages(char *, int, int);
+int rm_flags(char *, int, int);
 
 // ulib.c
 int stat(const char*, struct stat*);
