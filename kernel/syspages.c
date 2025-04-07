@@ -9,7 +9,7 @@
 #define ZERO 0
 #define A 1
 #define D 2
-#define AD 3
+#define AD (A | D)
 
 void print_page(int level, uint64 index, uint64 pt_id, pagetable_t pt, int mask) {
     char flags[8];
@@ -22,8 +22,8 @@ void print_page(int level, uint64 index, uint64 pt_id, pagetable_t pt, int mask)
     flags[6] = (pt_id & PTE_D) ? 'D' : '_';
     flags[7] = '\0';
 
-    if (!(((mask == A || mask == AD) && (flags[5] == 'A')) ||
-        ((mask == D || mask == AD) && (flags[6] == 'D')) || (mask == ZERO)) && level == 3) {
+    if (!(((mask & A || mask & AD) && (flags[5] == 'A')) ||
+        ((mask & D || mask & AD) && (flags[6] == 'D')) || !(mask ^ ZERO)) && level == 3) {
             return;
         }
 
@@ -141,9 +141,9 @@ uint64 rm_flags(uint64 buf, uint64 len, int mask) {
                 if (pt3_va >= end || pt3_va_end <= start)
                     continue;
 
-                if ((mask == A || mask == AD) && (pt2[k] & (uint64)PTE_A))
+                if ((mask & A || mask & AD) && (pt2[k] & (uint64)PTE_A))
                     pt2[k] &= ~(uint64)PTE_A;
-                if ((mask == D || mask == AD) && (pt2[k] & (uint64)PTE_D))
+                if ((mask & D || mask & AD) && (pt2[k] & (uint64)PTE_D))
                     pt2[k] &= ~(uint64)PTE_D;
             }
         }

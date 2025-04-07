@@ -5,7 +5,7 @@
 #define ZERO 0
 #define A 1
 #define D 2
-#define AD 3
+#define AD (A | D)
 
 void perror(const char *str) {
     write(2, str, strlen(str));
