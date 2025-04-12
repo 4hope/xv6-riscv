@@ -98,32 +98,46 @@ void cleanup() {
     exit(EXIT_SUCCESS);
 }
 
-void demonize() {
-    pid_t pid = fork();
-    if (pid < 0) exit(EXIT_FAILURE);
-    if (pid > 0) exit(EXIT_SUCCESS);
-    
-    if (setsid() == -1) {
-        perror("setsid failed");
-        exit(EXIT_FAILURE);
+void demonize(bool flag) {
+    if (flag) {
+        daemon(1, 0);
+        f = fopen(LOG_FILE, "w");
+        if (!f) {
+            perror("fopen failed");
+            exit(EXIT_FAILURE);
+        }
     }
+    else {
+        pid_t pid = fork();
+        if (pid < 0)
+            exit(EXIT_FAILURE);
+        if (pid > 0)
+            exit(EXIT_SUCCESS);
 
-    pid = fork();
-    if (pid < 0) exit(EXIT_FAILURE);
-    if (pid > 0) exit(EXIT_SUCCESS);
+        if (setsid() == -1) {
+            perror("setsid failed");
+            exit(EXIT_FAILURE);
+        }
 
-    umask(0);
-    chdir("/");
+        pid = fork();
+        if (pid < 0)
+            exit(EXIT_FAILURE);
+        if (pid > 0)
+            exit(EXIT_SUCCESS);
 
-    f = fopen(LOG_FILE, "w");
-    if (!f) {
-        perror("fopen failed");
-        exit(EXIT_FAILURE);
+        umask(0);
+        chdir("/");
+
+        f = fopen(LOG_FILE, "w");
+        if (!f) {
+            perror("fopen failed");
+            exit(EXIT_FAILURE);
+        }
+
+        int fd = fileno(f);
+        dup2(fd, STDOUT_FILENO);
+        dup2(fd, STDERR_FILENO);
     }
-
-    int fd = fileno(f);
-    dup2(fd, STDOUT_FILENO);
-    dup2(fd, STDERR_FILENO);
 }
 
 void eintr_error() {
@@ -148,7 +162,7 @@ void eintr_error() {
     }
     else if (sig_hup) {
         sig_hup = 0;
-        demonize();
+        demonize(false);
         fprintf(f, "SIGHUP: switching to daemon mode\n");
         print_stats();
         alarm(COUNT_SECONDS);
@@ -166,7 +180,7 @@ int main(int argc, char **argv) {
 
     f = stdout;
     if (is_demon) {
-        demonize();
+        demonize(true);
     }
     set_signals();
 
@@ -182,7 +196,7 @@ int main(int argc, char **argv) {
                 exit(EXIT_FAILURE);
             }
             else {
-                printf("FIFO exists, will use it\n");
+                fprintf(f, "FIFO exists, will use it\n");
             }
         }
         else {
@@ -191,7 +205,7 @@ int main(int argc, char **argv) {
         }
     }
     else 
-        printf("FIFO created\n");
+        fprintf(f, "FIFO created\n");
 
     alarm(COUNT_SECONDS);
 
