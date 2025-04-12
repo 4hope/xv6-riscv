@@ -100,9 +100,17 @@ void cleanup() {
 
 void demonize() {
     pid_t pid = fork();
+    if (pid < 0) exit(EXIT_FAILURE);
+    if (pid > 0) exit(EXIT_SUCCESS);
+    
+    if (setsid() == -1) {
+        perror("setsid failed");
+        exit(EXIT_FAILURE);
+    }
 
-    setsid();
     pid = fork();
+    if (pid < 0) exit(EXIT_FAILURE);
+    if (pid > 0) exit(EXIT_SUCCESS);
 
     umask(0);
     chdir("/");
@@ -116,8 +124,6 @@ void demonize() {
     int fd = fileno(f);
     dup2(fd, STDOUT_FILENO);
     dup2(fd, STDERR_FILENO);
-    if (fd > STDERR_FILENO)
-        close(fd);
 }
 
 void eintr_error() {
@@ -138,7 +144,6 @@ void eintr_error() {
         sig_alrm = 0;
         stats.count_alarms++;
         fprintf(f, "SIGALRM: Waiting for data...\n");
-        fflush(f);
         alarm(COUNT_SECONDS);
     }
     else if (sig_hup) {
@@ -146,6 +151,7 @@ void eintr_error() {
         demonize();
         fprintf(f, "SIGHUP: switching to daemon mode\n");
         print_stats();
+        alarm(COUNT_SECONDS);
     }
 }
 
