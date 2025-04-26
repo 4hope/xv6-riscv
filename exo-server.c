@@ -58,6 +58,12 @@ void set_signals() {
         exit(EXIT_FAILURE);
     }
 
+    struct sigaction sig_quit_handler = {.sa_handler = SIG_IGN};
+    if (sigaction(SIGQUIT, &sig_quit_handler, 0) < 0) {
+        perror("sigation(SIGQUIT)");
+        exit(EXIT_FAILURE);
+    }
+
     struct sigaction sig_alrm_handler = {.sa_handler = sig_alrm_handler_fnc};
     if (sigaction(SIGALRM, &sig_alrm_handler, 0) < 0) {
         perror("sigation(SIGALRM)");
