@@ -18,13 +18,13 @@
 
 volatile sig_atomic_t sig_term = 0;
 volatile sig_atomic_t sig_int = 0;
-volatile sig_atomic_t sig_quit = 0;
 volatile sig_atomic_t sig_alrm = 0;
 volatile sig_atomic_t sig_usr1 = 0;
 volatile sig_atomic_t sig_hup = 0;
 
 FILE *f = NULL;
 int fifo = -1;
+bool is_demon = false;
 
 typedef struct {
     uint64_t count_messages;
@@ -39,12 +39,11 @@ void print_stats() {
     fflush(f);
 }
 
-void sig_term_handler_fnc(int signo) { sig_term = 1; }
-void sig_int_handler_fnc(int signo) { sig_int = 1; }
-void sig_quit_handler_fnc(int signo) { sig_quit = 1; }
-void sig_alrm_handler_fnc(int signo) { sig_alrm = 1; }
-void sig_usr1_handler_fnc(int signo) { sig_usr1 = 1; }
-void sig_hup_handler_fnc(int signo) { sig_hup = 1; }
+void sig_term_handler_fnc(int signo) { (void)signo; sig_term = 1; }
+void sig_int_handler_fnc(int signo) { (void)signo; sig_int = 1; }
+void sig_alrm_handler_fnc(int signo) { (void)signo; sig_alrm = 1; }
+void sig_usr1_handler_fnc(int signo) { (void)signo; sig_usr1 = 1; }
+void sig_hup_handler_fnc(int signo) { (void)signo; sig_hup = 1; }
 
 void set_signals() {
     struct sigaction sig_term_handler = {.sa_handler = sig_term_handler_fnc};
@@ -56,12 +55,6 @@ void set_signals() {
     struct sigaction sig_int_handler = {.sa_handler = sig_int_handler_fnc};
     if (sigaction(SIGINT, &sig_int_handler, 0) < 0) {
         perror("sigation(SIGINT)");
-        exit(EXIT_FAILURE);
-    }
-
-    struct sigaction sig_quit_handler = {.sa_handler = SIG_IGN};
-    if (sigaction(SIGQUIT, &sig_quit_handler, 0) < 0) {
-        perror("sigation(SIGQUIT)");
         exit(EXIT_FAILURE);
     }
 
@@ -91,6 +84,10 @@ void cleanup() {
             exit(EXIT_FAILURE);
         }
     }
+    if (fifo != -1 && close(fifo) < 0) {
+        perror("close failed");
+        exit(EXIT_FAILURE);
+    }
     if (unlink(FIFO_NAME) == -1) {
         perror("unlink failed");
         exit(EXIT_FAILURE);
@@ -99,6 +96,8 @@ void cleanup() {
 }
 
 void demonize(bool flag) {
+    if (is_demon) return;
+
     if (flag) {
         daemon(1, 0);
         f = fopen(LOG_FILE, "w");
@@ -138,6 +137,7 @@ void demonize(bool flag) {
         dup2(fd, STDOUT_FILENO);
         dup2(fd, STDERR_FILENO);
     }
+    is_demon = true;
 }
 
 void eintr_error() {
@@ -171,16 +171,16 @@ void eintr_error() {
 
 int main(int argc, char **argv) {
     // expected input: ./program -d (if it is demon), ./program (if it is foreground regime)
+    (void)argv;
+    
     if (argc != 1 && argc != 2) {
         exit(EXIT_FAILURE);
     }
 
-    bool is_demon = false;
-    if (argc == 2) is_demon = true;
-
     f = stdout;
-    if (is_demon) {
+    if (argc == 2) {
         demonize(true);
+        is_demon = true;
     }
     set_signals();
 
@@ -229,7 +229,8 @@ int main(int argc, char **argv) {
 
         char buffer[BUF_SIZE + 1];
         ssize_t n;
-        while (n = read(fifo, buffer, BUF_SIZE)) {
+        while (true) {
+            n = read(fifo, buffer, BUF_SIZE);
             if (n < 0) {
                 if (errno == EINTR) {
                     eintr_error();
@@ -246,6 +247,11 @@ int main(int argc, char **argv) {
             }
             else if (n == 0) {
                 if (is_sig_int) cleanup();
+
+                if (fifo != -1 && close(fifo) < 0) {
+                    perror("close failed");
+                    exit(EXIT_FAILURE);
+                }
                 break;
             }
     
