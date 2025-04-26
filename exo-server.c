@@ -258,7 +258,6 @@ int main(int argc, char **argv) {
                     perror("close failed");
                     exit(EXIT_FAILURE);
                 }
-                fifo = -1;
                 break;
             }
     
@@ -275,5 +274,4 @@ int main(int argc, char **argv) {
         }
         stats.count_messages++;
     }
-    cleanup();
 }
