@@ -273,5 +273,13 @@ int main(int argc, char **argv) {
             stats.len_messages += n;
         }
         stats.count_messages++;
+        
+        if (sig_alrm || sig_hup || sig_term || sig_usr1 || sig_int) {
+            eintr_error();
+            if (sig_int) {
+                sig_int = 0;
+                cleanup();
+            }
+        }
     }
 }
