@@ -35,16 +35,18 @@ int pseudo_read(int user_dst, uint64 dst, int n, short minor) {
             ans = 0;
             break;
         case ZERO:
+            int cc = 0;
             while (n > SIZE) {
-                if (either_copyout(user_dst, dst + SIZE, &nuuuul, SIZE) < 0) {
+                if (either_copyout(user_dst, dst + cc, &nuuuul, SIZE) < 0) {
                     ans = -1;
                     break;
                 }
                 n -= SIZE;
+                cc += SIZE;
             }
             if (ans == -1) break;
 
-            if (either_copyout(user_dst, dst + n, &nuuuul, n) < 0) {
+            if (either_copyout(user_dst, dst + cc, &nuuuul, n) < 0) {
                 ans = -1;
             }
             ans = 0;
@@ -60,7 +62,7 @@ int pseudo_read(int user_dst, uint64 dst, int n, short minor) {
                 }
             }
             if (ans == -1) break;
-            
+
             release(&pseudo_dev.lock);
             ans = n;
             break;
