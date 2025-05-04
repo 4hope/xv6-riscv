@@ -12,6 +12,9 @@
 #define URANDOM 2
 #define NULLSTAT 3
 
+#define SIZE 512
+char nuuuul[SIZE];
+
 struct pseudo {
     struct spinlock lock;
     uint64 urandom_seed, count;
@@ -25,25 +28,40 @@ uint8 urandom_next() {
 }
 
 int pseudo_read(int user_dst, uint64 dst, int n, short minor) {
-    int ans = -1;
-
-    acquire(&pseudo_dev.lock);
+    int ans = 0;
 
     switch (minor) {
         case NULL:
             ans = 0;
             break;
         case ZERO:
+            while (n > SIZE) {
+                if (either_copyout(user_dst, dst + SIZE, &nuuuul, SIZE) < 0) {
+                    ans = -1;
+                    break;
+                }
+                n -= SIZE;
+            }
+            if (ans == -1) break;
+
+            if (either_copyout(user_dst, dst + n, &nuuuul, n) < 0) {
+                ans = -1;
+            }
             ans = 0;
             break;
         case URANDOM:
+            acquire(&pseudo_dev.lock);
             for (int i = 0; i < n; i++) {
                 uint8 new = urandom_next();
                 if (either_copyout(user_dst, dst + i, &new, 1) < 0) {
+                    release(&pseudo_dev.lock);
                     ans = -1;
                     break;
                 }
             }
+            if (ans == -1) break;
+            
+            release(&pseudo_dev.lock);
             ans = n;
             break;
         case NULLSTAT:
@@ -51,25 +69,24 @@ int pseudo_read(int user_dst, uint64 dst, int n, short minor) {
                 ans = -1;
                 break;
             }
+            acquire(&pseudo_dev.lock);
             if (either_copyout(user_dst, dst, &pseudo_dev.count, n) < 0) {
+                release(&pseudo_dev.lock);
                 ans = -1;
                 break;
             }
+            release(&pseudo_dev.lock);
             ans = n;
             break;
         default:
             break;
     }
 
-    release(&pseudo_dev.lock);
-
     return ans;
 }
 
 int pseudo_write(int user_src, uint64 src, int n, short minor) {
     int ans = -1;
-
-    acquire(&pseudo_dev.lock);
 
     switch (minor) {
         case NULL:
@@ -88,24 +105,28 @@ int pseudo_write(int user_src, uint64 src, int n, short minor) {
                 ans = -1;
                 break;
             }
+            acquire(&pseudo_dev.lock);
             pseudo_dev.urandom_seed = new_seed;
+            release(&pseudo_dev.lock);
             ans = n;
             break;
         case NULLSTAT:
+            acquire(&pseudo_dev.lock);
             pseudo_dev.count += n;
+            release(&pseudo_dev.lock);
             ans = n;
             break;
         default:
             break;
     }
 
-    release(&pseudo_dev.lock);
-
     return ans;
 }
 
 void pseudo_init(void) {
     initlock(&pseudo_dev.lock, "dev");
+    for (int i = 0; i < SIZE; ++i)
+        nuuuul[i] = 0;
     pseudo_dev.urandom_seed = 1337; pseudo_dev.count = 0;
     devsw[DEV_PSEUDO].read = pseudo_read;
     devsw[DEV_PSEUDO].write = pseudo_write;
