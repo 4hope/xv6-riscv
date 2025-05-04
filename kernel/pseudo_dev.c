@@ -46,10 +46,11 @@ int pseudo_read(int user_dst, uint64 dst, int n, short minor) {
             }
             if (ans == -1) break;
 
-            if (either_copyout(user_dst, dst + cc, &nuuuul, n) < 0) {
+            if (either_copyout(user_dst, dst + cc, &nuuuul, n) < 0)
                 ans = -1;
-            }
-            ans = 0;
+            else 
+                ans = 0;
+                
             break;
         case URANDOM:
             acquire(&pseudo_dev.lock);
