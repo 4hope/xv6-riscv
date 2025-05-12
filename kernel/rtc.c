@@ -7,12 +7,24 @@
 #include "proc.h"
 #include "sleeplock.h"
 
+struct spinlock rtc_lock;
+
+void rtc_init() {
+    initlock(&rtc_lock, "rtc");
+}
+
 uint32 rtc_low() {
-    return *(volatile uint32 *)RTC_LOW;
+    acquire(&rtc_lock);
+    uint32 low = *(volatile uint32 *)RTC_LOW;
+    release(&rtc_lock);
+    return low;
 }
 
 uint32 rtc_high() {
-    return *(volatile uint32 *)RTC_HIGH;
+    acquire(&rtc_lock);
+    uint32 low = *(volatile uint32 *)RTC_HIGH;
+    release(&rtc_lock);
+    return low;
 }
 
 uint64 sys_rtc_read() {

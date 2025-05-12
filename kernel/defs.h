@@ -191,4 +191,5 @@ void            virtio_disk_intr(void);
 // rtc.c
 uint32 rtc_low(void);
 uint32 rtc_high(void);
+void rtc_init(void);
 uint64 sys_rtc_read(void);
