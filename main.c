@@ -44,6 +44,7 @@ void direct(uint32_t block_pointer) {
         exit(1);
     }
     file_size -= to_print;
+    free(block_data);
 }
 
 void indirect(uint8_t block_pointer, int level) {
