@@ -51,6 +51,7 @@ void indirect(uint8_t block_pointer, int level) {
         for (int i = 0; i < (int)block_size / 4; ++i) {
             direct(0);
         }
+        return;
     }
     uint32_t block;
     for (int i = 0; i < (int)block_size / 4; ++i) {
