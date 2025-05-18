@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
     addr_inode_table = le32toh(addr_inode_table);
 
     uint32_t inode_index_in_group = (inode - 1) % inode_per_group;
-    // uint32_t count_block = (inode_index_in_group * inode_size) / block_size;
+    // uint32_t count_block = (inode_index_in_group * inode_size) / block_size; babybaby
     uint32_t inode_offset = addr_inode_table * block_size + inode_index_in_group * inode_size;
 
     if (fseek(file_system, inode_offset, SEEK_SET)) {
