@@ -1,46 +1,38 @@
-#! /bin/bash
-
-dev=/dev/loop0
-
-[ -f "ext2.img" ] && rm -rd ext2.img
-
+#!/bin/bash
+[ -f "ext2.img" ] && rm -f ext2.img
 truncate --size 100M ext2.img
-mkfs.ext2 ext2.img
+mkfs.ext2 ext2.img > /dev/null
 
-[ -d "ext2" ] && rm -rf "ext2"
+[ -d "ext2" ] && rm -rf ext2
 mkdir ext2
 
-mount -o loop -t ext2 ext2.img ext2
+mount_point=$(mktemp -d)
+loop_dev=$(sudo losetup --find --show ext2.img)
+sudo mount "$loop_dev" "$mount_point"
 
-cd ext2
-
-rm -r *
-
+cd "$mount_point" || exit 1
+rm -rf ./*
 mkdir dir
-
 echo "good morning" > dir/txt
 echo "goooood morning" >> dir/txt
-
 truncate --size 2M file
+cd - > /dev/null
 
-cd ..
-sha512sum ext2/file | cut -d ' ' -f1 > real
+sha512sum "$mount_point/file" | cut -d ' ' -f1 > real
+inode=$(stat -c '%i' "$mount_point/file")
+text_inode=$(stat -c '%i' "$mount_point/dir/txt")
 
-inode=$(stat -c '%i' ext2/file)
-text=$(stat -c '%i' ext2/dir/txt)
-
-umount ext2
+sudo umount "$mount_point"
+sudo losetup -d "$loop_dev"
+rmdir "$mount_point"
 
 gcc -Wall -Wextra -Werror -o main main.c
-
-./main ext2.img $inode | sha512sum | cut -d ' ' -f1 > my
+./main ext2.img "$inode" | sha512sum | cut -d ' ' -f1 > my
 
 echo 
 echo "info from file"
-./main ext2.img $text
+./main ext2.img "$text_inode"
 
 echo 
 echo "check"
-diff real my
-
-losetup -d $dev
+diff -u real my
