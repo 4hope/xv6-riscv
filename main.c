@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <endian.h>
 #include <string.h>
+#include <errno.h>
 
 #define SUPER_SIZE 1024
 
@@ -23,13 +24,13 @@ void direct(uint32_t block_pointer) {
     if (block_pointer == 0) {
         memset(block_data, 0, to_print);
     } else {
-        if (fseek(file_system, (long)block_pointer * block_size, SEEK_SET)) {
+        if (fseek(file_system, (long long)(block_pointer * block_size), SEEK_SET)) {
             perror("fseek failed");
             fclose(file_system);
             free(block_data);
             exit(1);
         }
-        if (fread(block_data, to_print, 1, file_system) != 1) {
+        if (fread(block_data, 1, to_print, file_system) != to_print) {
             perror("fread failed");
             fclose(file_system);
             free(block_data);
@@ -46,14 +47,16 @@ void direct(uint32_t block_pointer) {
     file_size -= to_print;
 }
 
-void indirect(uint8_t block_pointer, int level) {
+void indirect(uint32_t block_pointer, int level) {
     if (!block_pointer) {
         for (int i = 0; i < (int)block_size / 4; ++i) {
             direct(0);
         }
+        return;
     }
+    
     uint32_t block;
-    for (int i = 0; i < (int)block_size / 4; ++i) {
+    for (uint32_t i = 0; i < block_size / 4; ++i) {
         if (fseek(file_system, block_pointer * block_size + i * 4, SEEK_SET)) {
             perror("fseek failed");
             exit(1);
@@ -204,18 +207,18 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
+    if (fseek(file_system, 40, SEEK_CUR)) {
+        perror("fseek to inode failed");
+        fclose(file_system);
+        exit(1);
+    }
     uint32_t block_pointers[15];
+    if (fread(block_pointers, 4, 15, file_system) != 15) {
+        perror("fread failed");
+        fclose(file_system);
+        exit(1);
+    }
     for (int i = 0; i < 15; i++) {
-        if (fseek(file_system, 40, SEEK_CUR)) {
-            perror("fseek to inode failed");
-            fclose(file_system);
-            exit(1);
-        }
-        if (fread(&block_pointers[i], 4, 1, file_system) != 1) {
-            perror("fread failed");
-            fclose(file_system);
-            exit(1);
-        }
         block_pointers[i] = le32toh(block_pointers[i]);
     }
 
