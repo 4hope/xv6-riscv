@@ -150,6 +150,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
+
     uint32_t addr_inode_table;
     if (fseek(file_system, 8, SEEK_CUR)) {
         perror("fseek failed");

@@ -2,12 +2,12 @@
 
 dev=/dev/loop0
 
-rm -rd ext2.img
+[ -f "ext2.img" ] && rm -rd ext2.img
 
 truncate --size 100M ext2.img
 mkfs.ext2 ext2.img
 
-rmdir ext2
+[ -d "ext2" ] && rm -rf "ext2"
 mkdir ext2
 
 mount -o loop -t ext2 ext2.img ext2
